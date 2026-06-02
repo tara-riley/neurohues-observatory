@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Daily Hue — Amalfi Lemon MVP Connected</title>
+<style>
+:root{
+  --bg:#FFF9EA;
+  --ink:#2F2A1F;
+  --muted:#6F654F;
+  --soft:#FAF4E1;
+  --gold:#D6B93A;
+  --target:#F4E158;
+  --line:#EFE4B9;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  padding:28px;
+}
+.wrap{max-width:1040px;margin:0 auto}
+header{text-align:center;margin-bottom:24px}
+.eyebrow{text-transform:uppercase;letter-spacing:.25em;font-size:12px;color:#8A7A3C;margin-bottom:10px}
+h1{font-size:44px;line-height:1.05;margin:0 0 12px}
+p{line-height:1.5}
+.lead{font-size:18px;color:var(--muted);max-width:680px;margin:0 auto}
+.card{
+  background:rgba(255,255,255,.86);
+  border:1px solid rgba(239,228,185,.8);
+  border-radius:28px;
+  box-shadow:0 14px 40px rgba(47,42,31,.10);
+  padding:28px;
+}
+.steps{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.step{border-radius:999px;padding:9px 14px;background:var(--soft);color:var(--muted);font-size:14px}
+.step.active{background:var(--ink);color:white}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+@media(max-width:800px){.grid{grid-template-columns:1fr} h1{font-size:34px}}
+.stage{display:none}
+.stage.active{display:block}
+.panel{background:var(--soft);border-radius:22px;padding:20px}
+.flex-between{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.target-box{
+  aspect-ratio:1/1;
+  background:var(--target);
+  border-radius:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:inset 0 0 40px rgba(47,42,31,.10);
+  position:relative;
+  overflow:hidden;
+}
+.mix-circle{
+  width:60%;
+  height:60%;
+  border-radius:50%;
+  border:10px solid rgba(255,255,255,.78);
+  box-shadow:0 20px 45px rgba(47,42,31,.18);
+}
+.badge{
+  position:absolute;
+  bottom:24px;
+  background:rgba(255,255,255,.88);
+  padding:9px 14px;
+  border-radius:999px;
+  font-weight:bold;
+  font-size:14px;
+}
+.score{font-size:34px;font-weight:bold}
+.slider-row{margin:18px 0}
+.slider-meta{display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.swatch-small{
+  width:58px;height:58px;border-radius:16px;border:1px solid white;
+  box-shadow:inset 0 0 18px rgba(47,42,31,.1)
+}
+.feedback{background:#FFF6CC;border-radius:18px;padding:16px;margin-top:16px}
+button{
+  appearance:none;border:0;border-radius:16px;padding:14px 18px;
+  font-size:16px;cursor:pointer;margin:4px
+}
+.primary{background:var(--ink);color:#fff}
+.outline{background:white;border:1px solid var(--line);color:var(--ink)}
+.choice-grid{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 22px}
+.choice{
+  background:var(--soft);border:1px solid var(--line);border-radius:999px;
+  padding:10px 14px;cursor:pointer
+}
+.choice.selected{background:var(--ink);color:white;border-color:var(--ink)}
+.reveal-grid{display:grid;grid-template-columns:220px 1fr;gap:24px}
+@media(max-width:700px){.reveal-grid{grid-template-columns:1fr}}
+.color-chip{
+  aspect-ratio:1/1;background:var(--target);border-radius:32px;border:10px solid white;
+  box-shadow:inset 0 0 35px rgba(47,42,31,.10)
+}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+@media(max-width:800px){.info-grid{grid-template-columns:1fr}}
+.info-card{background:white;border:1px solid var(--line);border-radius:20px;padding:16px}
+.info-card ul{padding-left:18px;margin:10px 0 0;color:var(--muted)}
+.result{background:#FFF6CC;border-radius:20px;padding:18px;margin-top:18px}
+.bar{background:#EEE3B4;height:12px;border-radius:999px;overflow:hidden;margin:6px 0 12px}
+.fill{height:100%;background:#8A7A3C;border-radius:999px}
+input[type=text]{
+  width:100%;border:1px solid var(--line);border-radius:14px;padding:12px;
+  font-size:16px;font-family:inherit
+}
+.small{font-size:14px;color:var(--muted)}
+.actions{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+.error{background:#FDECEC;border:1px solid #E8A0A0;color:#7A1F1F}
+.success-note{background:#EFFFF1;border:1px solid #9AD9A0;color:#24592A}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">NeuroHues Daily Hue</div>
+  <h1>Discover Amalfi Lemon</h1>
+  <p class="lead">Mix the hue, check your eye, share your observations, and see a community snapshot powered by Supabase.</p>
+</header>
+
+<main class="card">
+<div class="steps">
+  <span class="step active" id="pill-mix">1. Mix</span>
+  <span class="step" id="pill-match">2. Match</span>
+  <span class="step" id="pill-reveal">3. Discover</span>
+  <span class="step" id="pill-observe">4. Observe</span>
+  <span class="step" id="pill-results">5. Compare</span>
+</div>
+
+<section id="mix" class="stage active">
+  <div class="grid">
+    <div>
+      <div class="flex-between">
+        <div>
+          <div class="eyebrow">Target Color</div>
+          <p class="small">Match the hidden center hue.</p>
+        </div>
+        <div style="text-align:right">
+          <div class="eyebrow">Resonance</div>
+          <div class="score"><span id="score">0</span>%</div>
+        </div>
+      </div>
+
+      <div class="target-box">
+        <div class="mix-circle" id="mixCircle"></div>
+        <div class="badge" id="matchBadge" style="display:none;">✨ Match unlocked</div>
+      </div>
+
+      <div class="feedback">
+        <strong id="feedbackTitle">Still searching.</strong>
+        <div class="small" id="feedbackText">Shift the mix and watch what changes.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="flex-between">
+          <div>
+            <div class="eyebrow">Your Mix</div>
+            <h2 id="hexOut" style="margin:4px 0 0">#000000</h2>
+          </div>
+          <div class="swatch-small" id="swatch"></div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-meta"><strong>R</strong><span id="rv">220</span></div>
+          <input id="r" type="range" min="0" max="255" value="220">
+        </div>
+        <div class="slider-row">
+          <div class="slider-meta"><strong>G</strong><span id="gv">190</span></div>
+          <input id="g" type="range" min="0" max="255" value="190">
+        </div>
+        <div class="slider-row">
+          <div class="slider-meta"><strong>B</strong><span id="bv">70</span></div>
+          <input id="b" type="range" min="0" max="255" value="70">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" onclick="go('match')">Continue to Match</button>
+        <button class="outline" onclick="resetMix()">Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="match" class="stage">
+  <div style="text-align:center;max-width:850px;margin:0 auto">
+    <div class="eyebrow">Quick Match Check <span id="roundNum">1</span> of 3</div>
+    <h2 id="matchQuestion">Which color is closer to Amalfi Lemon?</h2>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr 1fr;align-items:stretch">
+      <div class="info-card">
+        <div class="eyebrow">Target</div>
+        <div class="color-chip" style="margin-top:12px"></div>
+      </div>
+      <button class="info-card" onclick="chooseMatch(0)" style="text-align:left">
+        <div class="eyebrow">Option A</div>
+        <div class="color-chip" id="optionA" style="margin-top:12px"></div>
+        <strong id="optionAHex"></strong>
+      </button>
+      <button class="info-card" onclick="chooseMatch(1)" style="text-align:left">
+        <div class="eyebrow">Option B</div>
+        <div class="color-chip" id="optionB" style="margin-top:12px"></div>
+        <strong id="optionBHex"></strong>
+      </button>
+    </div>
+
+    <div id="matchFeedback" class="result" style="display:none;text-align:left"></div>
+  </div>
+</section>
+
+<section id="reveal" class="stage">
+  <div class="reveal-grid">
+    <div class="color-chip"></div>
+    <div>
+      <div class="eyebrow">You Discovered</div>
+      <h2 style="font-size:40px;margin:4px 0 0">Amalfi Lemon</h2>
+      <p class="small">#F4E158 · RGB 244, 225, 88</p>
+      <p>A bright, citrusy, sunlit yellow.</p>
+      <div class="panel">
+        <strong>Did you notice?</strong>
+        <p class="small">This yellow carries more green than most people expect. That green lift gives it its fresh lemon brightness.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <strong>Found In</strong>
+      <ul>
+        <li>Lemon peel</li>
+        <li>Mediterranean ceramics</li>
+        <li>Summer café umbrellas</li>
+        <li>Vintage lemonade signs</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <strong>Designers Use It For</strong>
+      <ul>
+        <li>Optimism</li>
+        <li>Freshness</li>
+        <li>Energy</li>
+        <li>Food and travel moments</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <strong>Pairs Well With</strong>
+      <ul>
+        <li>Poolside Blue</li>
+        <li>Sea Glass</li>
+        <li>Indigo Night</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" onclick="go('observe')">Make It Yours</button>
+  </div>
+</section>
+
+<section id="observe" class="stage">
+  <h2>Make It Yours</h2>
+  <p class="small">Your responses help NeuroHues observe how people connect with color.</p>
+
+  <div class="panel">
+    <h3>1. Where have you seen this color?</h3>
+    <div class="choice-grid" data-field="seen_in">
+      <span class="choice">Food</span><span class="choice">Nature</span><span class="choice">Home</span><span class="choice">Travel</span><span class="choice">Fashion</span><span class="choice">Art & Design</span><span class="choice">Memory Only</span>
+    </div>
+
+    <h3>2. What does this color feel like?</h3>
+    <div class="choice-grid" data-field="feels_like">
+      <span class="choice">Hopeful</span><span class="choice">Calm</span><span class="choice">Fresh</span><span class="choice">Energetic</span><span class="choice">Cozy</span><span class="choice">Playful</span><span class="choice">Reflective</span><span class="choice">Nostalgic</span>
+    </div>
+
+    <h3>3. How immediate was your response?</h3>
+    <div class="choice-grid" data-field="response_speed">
+      <span class="choice">Immediate</span><span class="choice">Fairly Quick</span><span class="choice">Had To Think About It</span>
+    </div>
+
+    <h3>4. After spending time with this color, what changed?</h3>
+    <div class="choice-grid" data-field="shift">
+      <span class="choice">More Curious</span><span class="choice">More Creative</span><span class="choice">More Calm</span><span class="choice">More Hopeful</span><span class="choice">More Energized</span><span class="choice">More Reflective</span><span class="choice">About The Same</span>
+    </div>
+
+    <h3>5. What came to mind?</h3>
+    <input id="memory_word" maxlength="50" placeholder="One word, like lemonade, kitchen, grandma..." />
+
+    <h3>6. When is this memory from?</h3>
+    <div class="choice-grid" data-field="memory_age">
+      <span class="choice">Childhood</span><span class="choice">Teen Years</span><span class="choice">Early Adult</span><span class="choice">Recent</span><span class="choice">Not A Memory</span>
+    </div>
+
+    <h3>7. What does this color make you want to do?</h3>
+    <div class="choice-grid" data-field="creative_direction">
+      <span class="choice">Write</span><span class="choice">Draw</span><span class="choice">Paint</span><span class="choice">Photograph</span><span class="choice">Decorate</span><span class="choice">Make Something</span><span class="choice">Explore</span><span class="choice">Reflect</span><span class="choice">Other</span>
+    </div>
+
+    <div id="otherWrap" style="display:none;">
+      <h3>What would you rather do?</h3>
+      <input id="creative_direction_other" maxlength="100" placeholder="Optional: cook, garden, travel, organize..." />
+    </div>
+  </div>
+
+  <div id="saveStatus" class="result" style="display:none;"></div>
+
+  <div class="actions">
+    <button class="primary" onclick="saveObservation()">See Community Snapshot</button>
+  </div>
+</section>
+
+<section id="results" class="stage">
+  <h2>Community Snapshot</h2>
+  <p class="small">These results are pulled from your Supabase observations table.</p>
+
+  <div class="grid">
+    <div class="result">
+      <h3>Your Observation</h3>
+      <div id="yourObservation"></div>
+    </div>
+
+    <div class="result">
+      <h3>Live Amalfi Lemon Patterns</h3>
+      <div id="liveResults">Loading community results...</div>
+    </div>
+  </div>
+
+  <div class="result">
+    <h3>Optional Reflect/Create</h3>
+    <p><strong>Reflect:</strong> What yellow memory still feels warm today?</p>
+    <p><strong>Create:</strong> Use this color. Draw or write one small thing that belongs in that memory.</p>
+  </div>
+
+  <div class="actions">
+    <button class="outline" onclick="restart()">Play Amalfi Lemon Again</button>
+    <button class="primary" onclick="alert('Next Hue coming soon.')">Next Hue →</button>
+  </div>
+</section>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://idjkwenphrxbqnrlgaow.supabase.co";
+
+/*
+  IMPORTANT:
+  Paste your Supabase Publishable Key below.
+  It starts with: sb_publishable_
+*/
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlkamt3ZW5waHJ4YnFucmxnYW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDY4OTcsImV4cCI6MjA5NTkyMjg5N30.qYGHjBTnh4smdEnvQFuBx1SntTetwJeHo5bTs9IMU4w";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const TARGET = { r:244, g:225, b:88, hex:"#F4E158" };
+
+const matchRounds = [
+  {
+    q:"Which color is closer to Amalfi Lemon?",
+    options:[
+      {hex:"#F1D24F", note:"This one drifts warmer and more golden."},
+      {hex:"#F4E05A", note:"This one keeps the fresh lemon brightness."}
+    ],
+    answer:1
+  },
+  {
+    q:"Which yellow keeps more of the lemon-green lift?",
+    options:[
+      {hex:"#F4E25C", note:"Yes — this keeps the fresh citrus lift."},
+      {hex:"#F2D865", note:"This one is softer and more buttery."}
+    ],
+    answer:0
+  },
+  {
+    q:"Final eye check: which one feels most like the target?",
+    options:[
+      {hex:"#F5E15A", note:"Almost exact — bright, clean, and lemony."},
+      {hex:"#EEE35D", note:"This one leans a touch muted and green-gray."}
+    ],
+    answer:0
+  }
+];
+
+let matchIndex = 0;
+let observation = {};
+
+function getAnonymousId() {
+  let id = localStorage.getItem("neurohues_anonymous_id");
+  if (!id) {
+    id = "browser_" + Math.random().toString(36).substring(2);
+    localStorage.setItem("neurohues_anonymous_id", id);
+  }
+  return id;
+}
+
+function rgbToHex(r,g,b){
+  return "#" + [r,g,b].map(x => {
+    const h = Number(x).toString(16).toUpperCase();
+    return h.length === 1 ? "0" + h : h;
+  }).join("");
+}
+
+function scoreColor(r,g,b){
+  const d = Math.sqrt((r-TARGET.r)**2 + (g-TARGET.g)**2 + (b-TARGET.b)**2);
+  return Math.max(0, Math.round(100 - (d / 441.67) * 100));
+}
+
+function updateMix(){
+  const r = +document.getElementById("r").value;
+  const g = +document.getElementById("g").value;
+  const b = +document.getElementById("b").value;
+  const hex = rgbToHex(r,g,b);
+  const score = scoreColor(r,g,b);
+
+  document.getElementById("rv").textContent = r;
+  document.getElementById("gv").textContent = g;
+  document.getElementById("bv").textContent = b;
+  document.getElementById("hexOut").textContent = hex;
+  document.getElementById("score").textContent = score;
+  document.getElementById("mixCircle").style.background = hex;
+  document.getElementById("swatch").style.background = hex;
+  document.getElementById("matchBadge").style.display = score >= 96 ? "block" : "none";
+
+  const title = document.getElementById("feedbackTitle");
+  const text = document.getElementById("feedbackText");
+
+  if(score >= 96){
+    title.textContent = "You found the hue.";
+    text.textContent = "Amalfi Lemon is blooming.";
+  } else if(score >= 90){
+    title.textContent = "So close.";
+    text.textContent = "A tiny adjustment could unlock it.";
+  } else if(score >= 80){
+    title.textContent = "Getting warmer.";
+    text.textContent = "You’re moving toward the color’s true voice.";
+  } else if(score >= 65){
+    title.textContent = "There’s a spark here.";
+    text.textContent = "Keep tuning the balance of red, green, and blue.";
+  } else {
+    title.textContent = "Still searching.";
+    text.textContent = "Shift the mix and watch what changes.";
+  }
+
+  observation.match_score = score;
+}
+
+function resetMix(){
+  document.getElementById("r").value = 220;
+  document.getElementById("g").value = 190;
+  document.getElementById("b").value = 70;
+  updateMix();
+}
+
+["r","g","b"].forEach(id => {
+  document.getElementById(id).addEventListener("input", updateMix);
+});
+
+function go(stage){
+  document.querySelectorAll(".stage").forEach(s => s.classList.remove("active"));
+  document.getElementById(stage).classList.add("active");
+
+  document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
+  const pill = document.getElementById("pill-" + stage);
+  if (pill) pill.classList.add("active");
+
+  if(stage === "match") loadMatch();
+  if(stage === "results") loadLiveResults();
+}
+
+function loadMatch(){
+  const round = matchRounds[matchIndex];
+  document.getElementById("roundNum").textContent = matchIndex + 1;
+  document.getElementById("matchQuestion").textContent = round.q;
+  document.getElementById("optionA").style.background = round.options[0].hex;
+  document.getElementById("optionB").style.background = round.options[1].hex;
+  document.getElementById("optionAHex").textContent = round.options[0].hex;
+  document.getElementById("optionBHex").textContent = round.options[1].hex;
+  document.getElementById("matchFeedback").style.display = "none";
+}
+
+function chooseMatch(i){
+  const round = matchRounds[matchIndex];
+  const correct = i === round.answer;
+  const box = document.getElementById("matchFeedback");
+  box.style.display = "block";
+  box.innerHTML = `
+    <strong>${correct ? "✨ Excellent eye." : "↳ Good observation."}</strong>
+    <p>${round.options[i].note}</p>
+    <button class="primary" onclick="nextMatch()">
+      ${matchIndex >= matchRounds.length - 1 ? "Reveal Amalfi Lemon" : "Next Match"}
+    </button>
+  `;
+
+  observation.match_check_score = (observation.match_check_score || 0) + (correct ? 1 : 0);
+}
+
+function nextMatch(){
+  if(matchIndex >= matchRounds.length - 1){
+    go("reveal");
+  } else {
+    matchIndex++;
+    loadMatch();
+  }
+}
+
+document.querySelectorAll(".choice-grid").forEach(group => {
+  group.querySelectorAll(".choice").forEach(choice => {
+    choice.addEventListener("click", () => {
+      group.querySelectorAll(".choice").forEach(c => c.classList.remove("selected"));
+      choice.classList.add("selected");
+      observation[group.dataset.field] = choice.textContent;
+
+      if (group.dataset.field === "creative_direction") {
+        document.getElementById("otherWrap").style.display =
+          choice.textContent === "Other" ? "block" : "none";
+      }
+    });
+  });
+});
+
+async function saveObservation(){
+  const status = document.getElementById("saveStatus");
+  status.style.display = "block";
+  status.className = "result";
+  status.textContent = "Saving your observation...";
+
+  observation.memory_word = document.getElementById("memory_word").value.trim();
+  observation.creative_direction_other =
+    document.getElementById("creative_direction_other")?.value.trim() || null;
+
+  const payload = {
+    anonymous_user_id: getAnonymousId(),
+    color_id: "amalfi_lemon",
+    match_score: observation.match_score || 0,
+    match_check_score: observation.match_check_score || 0,
+    seen_in: observation.seen_in || null,
+    feels_like: observation.feels_like || null,
+    response_speed: observation.response_speed || null,
+    shift: observation.shift || null,
+    memory_word: observation.memory_word || null,
+    memory_age: observation.memory_age || null,
+    creative_direction: observation.creative_direction || null,
+    creative_direction_other:
+      observation.creative_direction === "Other"
+        ? observation.creative_direction_other
+        : null
+  };
+
+  const { error } = await supabaseClient
+    .from("observations")
+    .insert([payload]);
+
+  if (error) {
+    console.error(error);
+    status.className = "result error";
+    status.textContent = "Observation failed to save. Check your publishable key and Supabase policies.";
+    return;
+  }
+
+  status.className = "result success-note";
+  status.textContent = "Observation recorded.";
+
+  document.getElementById("yourObservation").innerHTML = `
+    <p><strong>Seen In:</strong> ${observation.seen_in || "Not answered"}</p>
+    <p><strong>Feels Like:</strong> ${observation.feels_like || "Not answered"}</p>
+    <p><strong>Response Speed:</strong> ${observation.response_speed || "Not answered"}</p>
+    <p><strong>Shift:</strong> ${observation.shift || "Not answered"}</p>
+    <p><strong>Memory Word:</strong> ${observation.memory_word || "Not answered"}</p>
+    <p><strong>Memory Age:</strong> ${observation.memory_age || "Not answered"}</p>
+    <p><strong>Creative Direction:</strong> ${observation.creative_direction || "Not answered"}</p>
+    ${
+      observation.creative_direction === "Other"
+        ? `<p><strong>Other:</strong> ${observation.creative_direction_other || "Not answered"}</p>`
+        : ""
+    }
+    <p><strong>Mix Score:</strong> ${observation.match_score || 0}%</p>
+    <p><strong>Match Check:</strong> ${observation.match_check_score || 0}/3</p>
+  `;
+
+  go("results");
+}
+
+function percent(count, total) {
+  if (!total) return 0;
+  return Math.round((count / total) * 100);
+}
+
+function makeBars(title, rows, fieldName, total) {
+  if (!rows.length) return `<strong>${title}</strong><p class="small">No responses yet.</p>`;
+
+  return `
+    <strong>${title}</strong>
+    ${rows.map(row => {
+      const value = row[fieldName] || "Unanswered";
+      const p = percent(row.count, total);
+      return `
+        <p>${value} — ${p}%</p>
+        <div class="bar"><div class="fill" style="width:${p}%"></div></div>
+      `;
+    }).join("")}
+  `;
+}
+
+async function getGroupedCounts(field) {
+  const { data, error } = await supabaseClient
+    .from("observations")
+    .select(field)
+    .eq("color_id", "amalfi_lemon");
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  const counts = {};
+  data.forEach(row => {
+    const value = row[field] || "Unanswered";
+    counts[value] = (counts[value] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .map(([key, count]) => ({ [field]: key, count }))
+    .sort((a,b) => b.count - a.count)
+    .slice(0, 5);
+}
+
+async function loadLiveResults(){
+  const box = document.getElementById("liveResults");
+  box.innerHTML = "Loading live results...";
+
+  const { count, error: countError } = await supabaseClient
+    .from("observations")
+    .select("*", { count: "exact", head: true })
+    .eq("color_id", "amalfi_lemon");
+
+  if (countError) {
+    console.error(countError);
+    box.innerHTML = "<p>Unable to load community results.</p>";
+    return;
+  }
+
+  const seenRows = await getGroupedCounts("seen_in");
+  const feelRows = await getGroupedCounts("feels_like");
+  const shiftRows = await getGroupedCounts("shift");
+  const creativeRows = await getGroupedCounts("creative_direction");
+
+  box.innerHTML = `
+    <p><strong>Total observations:</strong> ${count || 0}</p>
+    ${makeBars("Seen In", seenRows, "seen_in", count)}
+    ${makeBars("Feels Like", feelRows, "feels_like", count)}
+    ${makeBars("Shift", shiftRows, "shift", count)}
+    ${makeBars("Creative Direction", creativeRows, "creative_direction", count)}
+  `;
+}
+
+function restart(){
+  matchIndex = 0;
+  observation = {};
+  resetMix();
+
+  document.getElementById("memory_word").value = "";
+  document.getElementById("creative_direction_other").value = "";
+  document.getElementById("otherWrap").style.display = "none";
+  document.getElementById("saveStatus").style.display = "none";
+
+  document.querySelectorAll(".choice").forEach(c => c.classList.remove("selected"));
+  go("mix");
+}
+
+updateMix();
+</script>
+</body>
+</html>
